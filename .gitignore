@@ -2,7 +2,7 @@
 .env
 
 # Ignore python and jupyter notebook cache files
-ethi-mart/
+ethio-mart/
 __pycache__/
 *.pyc
 *.pyo

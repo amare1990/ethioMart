@@ -1,4 +1,5 @@
 import os
+import re
 # BASE_DIR = os.path.join(__file__, '.env')
 from telethon import TelegramClient
 from PIL import Image
@@ -52,3 +53,20 @@ class DataProcessor:
             return img_data
         else:
             return None
+
+    def preprocess_text(self, text):
+        """
+        Preprocess Amharic text: tokenization, normalization, and handling language-specific features.
+        """
+        # Tokenization example (simple whitespace-based tokenization for Amharic)
+        tokens = text.split()
+
+        # Normalize text (removing extra spaces, punctuation, etc.)
+        text = ' '.join(tokens)
+        text = re.sub(r'[^\w\s]', '', text)  # Remove punctuation
+
+        # Add Amharic-specific preprocessing steps if needed (e.g., handling specific characters)
+        # Example: Normalize or remove common non-alphabetic characters
+
+        return text
+

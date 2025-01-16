@@ -70,3 +70,23 @@ class DataProcessor:
 
         return text
 
+    def clean_and_structure_data(self):
+        """
+        Clean and structure the data into a unified format.
+        """
+        cleaned_data = []
+        for entry in self.data:
+            if 'message' in entry:
+                cleaned_data.append({
+                    'message': self.preprocess_text(entry['message']),
+                    'sender': entry['sender'],
+                    'timestamp': entry['timestamp']
+                })
+            if 'media' in entry:
+                cleaned_data.append({
+                    'media': entry['media'],
+                    'sender': entry['sender'],
+                    'timestamp': entry['timestamp']
+                })
+        self.data = cleaned_data
+

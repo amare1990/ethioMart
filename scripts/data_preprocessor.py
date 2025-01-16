@@ -85,15 +85,15 @@ class DataProcessor:
         """
         cleaned_data = []
         for entry in self.data:
-            if 'message' in entry:
+            if entry['type'] == 'text':
                 cleaned_data.append({
-                    'message': self.preprocess_text(entry['message']),
+                    'message': self.preprocess_text(entry['content']),
                     'sender': entry['sender'],
                     'timestamp': entry['timestamp']
                 })
-            if 'media' in entry:
+            if entry['type'] == 'media':
                 cleaned_data.append({
-                    'media': entry['media'],
+                    'media': entry['content'],
                     'sender': entry['sender'],
                     'timestamp': entry['timestamp']
                 })

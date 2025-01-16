@@ -9,6 +9,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+# List of Telegram channels to fetch data from (sample names)
+channels = ['@ZemenExpress', '@nevacomputer', '@Shewabrand', '@modernshoppingcenter', '@aradabrand2']
+
+
 
 class DataProcessor:
     def __init__(self, phone_number):
@@ -20,37 +24,40 @@ class DataProcessor:
         self.channels = []  # List to store selected channels
         self.data = []  # List to store preprocessed data
 
-    def connect_to_telegram(self):
+    async def connect_to_telegram(self):
         """
         Connect to Telegram using the Telethon client.
         """
-        self.client.start()
+        await self.client.start()
         print("Connected to Telegram")
 
     async def fetch_data_from_channels(self, channel_names):
         """
-        Fetch data (messages, images, documents) from specified Telegram channels.
+        Fetch data from the specified Telegram channels.
         """
         for channel_name in channel_names:
-            channel = await self.client.get_entity(channel_name)  # Await entity retrieval
-            async for msg in self.client.iter_messages(channel):
-                if msg.text:
-                    self.data.append({
-                        'type': 'text',
-                        'content': msg.text,
-                        'timestamp': msg.date,
-                        'sender': msg.sender_id
-                    })
-                if msg.media:
-                    # Handling media (images, documents, etc.)
-                    media_path = await self.download_media(msg.media)
-                    self.data.append({
-                        'type': 'media',
-                        'content': media_path,
-                        'timestamp': msg.date,
-                        'sender': msg.sender_id
-                    })
-        print("Data with media fetched successfully")
+            try:
+                channel = await self.client.get_entity(channel_name)
+                async for msg in self.client.iter_messages(channel):
+                    if msg.text:
+                        self.data.append({
+                            'type': 'text',
+                            'content': msg.text,
+                            'timestamp': msg.date,
+                            'sender': msg.sender_id
+                        })
+                    if msg.media:
+                        # Handle media if necessary (e.g., download)
+                        self.data.append({
+                            'type': 'media',
+                            'content': str(msg.media),  # Placeholder for media
+                            'timestamp': msg.date,
+                            'sender': msg.sender_id
+                        })
+            except Exception as e:
+                print(f"Error fetching data from {channel_name}: {e}")
+        print("Data fetched successfully!")
+
 
     async def download_media(self, media):
         """

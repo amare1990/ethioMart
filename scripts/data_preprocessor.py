@@ -1,6 +1,8 @@
 import os
-BASE_DIR = os.path.join(__file__, '.env')
+# BASE_DIR = os.path.join(__file__, '.env')
 from telethon import TelegramClient
+from PIL import Image
+from io import BytesIO
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -38,3 +40,15 @@ class DataProcessor:
                     # Handling media (images, documents)
                     media = self.download_media(msg.media)
                     self.data.append({'media': media, 'timestamp': msg.date, 'sender': msg.sender_id})
+
+
+    def download_media(self, media):
+        """
+        Download and process media (images, documents) shared in the messages.
+        """
+        # Downloading media (example for images)
+        if isinstance(media, Image):
+            img_data = media.download_as_image()
+            return img_data
+        else:
+            return None

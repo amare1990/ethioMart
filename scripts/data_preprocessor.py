@@ -1,5 +1,8 @@
 import os
 import re
+
+import numpy as np
+import pandas as pd
 # BASE_DIR = os.path.join(__file__, '.env')
 from telethon import TelegramClient
 
@@ -149,3 +152,13 @@ class DataProcessor:
                     'timestamp': entry['timestamp']
                 })
         self.data = cleaned_data
+
+
+    def store_data(self, filename='preprocessed_data.csv'):
+        """
+        Store the preprocessed data into a structured format (CSV for simplicity).
+        """
+        # Converting the structured data into a Pandas DataFrame
+        df = pd.DataFrame(self.data)
+        df.to_csv(f'../data/{filename}', index=False)
+        print(f"Data stored in {filename}")

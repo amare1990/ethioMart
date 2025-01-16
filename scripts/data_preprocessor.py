@@ -27,32 +27,41 @@ class DataProcessor:
         self.client.start()
         print("Connected to Telegram")
 
-    def fetch_data_from_channels(self, channel_names):
+    async def fetch_data_from_channels(self, channel_names):
         """
-        Fetch data (messages, images, documents) from specified Telegram channels in real-time.
+        Fetch data (messages, images, documents) from specified Telegram channels.
         """
         for channel_name in channel_names:
-            channel = self.client.get_entity(channel_name)
-            messages = self.client.iter_messages(channel)
-            for msg in messages:
+            channel = await self.client.get_entity(channel_name)  # Await entity retrieval
+            async for msg in self.client.iter_messages(channel):
                 if msg.text:
-                    self.data.append({'message': msg.text, 'timestamp': msg.date, 'sender': msg.sender_id})
+                    self.data.append({
+                        'type': 'text',
+                        'content': msg.text,
+                        'timestamp': msg.date,
+                        'sender': msg.sender_id
+                    })
                 if msg.media:
-                    # Handling media (images, documents)
-                    media = self.download_media(msg.media)
-                    self.data.append({'media': media, 'timestamp': msg.date, 'sender': msg.sender_id})
+                    # Handling media (images, documents, etc.)
+                    media_path = await self.download_media(msg.media)
+                    self.data.append({
+                        'type': 'media',
+                        'content': media_path,
+                        'timestamp': msg.date,
+                        'sender': msg.sender_id
+                    })
+        print("Data with media fetched successfully")
 
-
-    def download_media(self, media):
+    async def download_media(self, media):
         """
         Download and process media (images, documents) shared in the messages.
         """
-        # Downloading media (example for images)
-        if isinstance(media, Image):
-            img_data = media.download_as_image()
-            return img_data
-        else:
-            return None
+        # Check if the media is valid and can be downloaded
+        if media:
+            # Use Telethon's built-in `download_media` method
+            media_path = await self.client.download_media(media)
+            return media_path
+        return None
 
     def preprocess_text(self, text):
         """

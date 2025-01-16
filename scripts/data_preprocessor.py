@@ -23,3 +23,18 @@ class DataProcessor:
         """
         self.client.start()
         print("Connected to Telegram")
+
+    def fetch_data_from_channels(self, channel_names):
+        """
+        Fetch data (messages, images, documents) from specified Telegram channels in real-time.
+        """
+        for channel_name in channel_names:
+            channel = self.client.get_entity(channel_name)
+            messages = self.client.iter_messages(channel)
+            for msg in messages:
+                if msg.text:
+                    self.data.append({'message': msg.text, 'timestamp': msg.date, 'sender': msg.sender_id})
+                if msg.media:
+                    # Handling media (images, documents)
+                    media = self.download_media(msg.media)
+                    self.data.append({'media': media, 'timestamp': msg.date, 'sender': msg.sender_id})

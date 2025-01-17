@@ -55,3 +55,11 @@ class CoNLLLabeler:
         return "\n".join(labeled_tokens)
 
 
+    def label_dataset(self):
+        """
+        Process the dataset and label each message.
+        """
+        for message in self.data["Message"]:
+            labeled_message = self.label_message_utf8_with_birr(message)
+            self.labeled_data.append(labeled_message)
+            self.labeled_data.append("")  # Separate messages with a blank line

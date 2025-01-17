@@ -120,10 +120,33 @@ class DataProcessor:
                 print(f"Error fetching data from {channel_name}: {e}")
         print("Data fetched successfully!")
 
+
+    def remove_emojis(self, text):
+        emoji_pattern = re.compile(
+            "["
+            "\U0001F600-\U0001F64F"  # emoticons
+            "\U0001F300-\U0001F5FF"  # symbols & pictographs
+            "\U0001F680-\U0001F6FF"  # transport & map symbols
+            "\U0001F700-\U0001F77F"  # alchemical symbols
+            "\U0001F780-\U0001F7FF"  # geometric shapes extended
+            "\U0001F800-\U0001F8FF"  # supplemental arrows-c
+            "\U0001F900-\U0001F9FF"  # supplemental symbols & pictographs
+            "\U0001FA00-\U0001FA6F"  # chess symbols
+            "\U0001FA70-\U0001FAFF"  # symbols & pictographs extended-a
+            "\U00002702-\U000027B0"  # dingbats
+            "\U000024C2-\U0001F251"
+            "]+",
+            flags=re.UNICODE
+        )
+        return emoji_pattern.sub(r'', text)
+
     def preprocess_text(self, text):
         """
         Preprocess Amharic text: tokenization, normalization, and handling language-specific features.
         """
+        # Remove emojis
+        text = self.remove_emojis(text)
+
         # Tokenization example (simple whitespace-based tokenization for Amharic)
         tokens = text.split()
 

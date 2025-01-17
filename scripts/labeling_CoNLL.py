@@ -1,4 +1,3 @@
-import os
 import re
 
 
@@ -55,11 +54,13 @@ class CoNLLLabeler:
         return "\n".join(labeled_tokens)
 
 
-    def label_dataset(self):
+    def label_dataset(self, max_messages=50):
         """
         Process the dataset and label each message.
         """
-        for message in self.data["Message"]:
+        for i, message in enumerate(self.data["Message"]):
+            if i >= max_messages:
+                break  # Stop after labeling the specified number of messages
             labeled_message = self.label_message_utf8_with_birr(message)
             self.labeled_data.append(labeled_message)
             self.labeled_data.append("")  # Separate messages with a blank line

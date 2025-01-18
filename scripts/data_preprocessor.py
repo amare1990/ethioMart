@@ -37,46 +37,33 @@ class DataProcessor:
         self.data = []  # List to store preprocessed data
 
         self.main_download_folder = download_folder
-        self.text_folder = os.path.join(self.main_download_folder, 'text_folder')
-        self.media_folder = os.path.join(self.main_download_folder, 'media_folder')
+        os.makedirs(self.main_download_folder, exist_ok=True)  # Ensure folder exists
 
-        # Create main folder and subfolders if they don't exist
-        os.makedirs(self.main_download_folder, exist_ok=True)
-        os.makedirs(self.text_folder, exist_ok=True)
-        os.makedirs(self.media_folder, exist_ok=True)
-
-    async def download_media(self, media):
+    async def download_media(self, media, filename):
         """
         Download and process media (images, documents) shared in the messages.
         """
         if media:
-            # Specify media_folder to download the media files
-            # media_folder = os.path.join(self.download_folder, 'media_folder')
-            media_folder = os.path.join(self.main_download_folder, 'media_folder')
-            if not os.path.exists(media_folder):
-                os.makedirs(media_folder)
-
-            # Download and save the media to the media_folder
-            media_path = await self.client.download_media(media, file=self.media_folder)
-            print(f"Media saved to {media_path}")  # Optionally print the saved media path
+            media_path = os.path.join(self.main_download_folder, filename)
+            media_path = await self.client.download_media(media, file=media_path)
+            print(f"Media saved to {media_path}")
             return media_path
         return None
 
-
     def save_text_data(self, text, filename):
         """
-        Save text data in the text folder.
+        Save text data in the main download folder.
         """
-        text_path = os.path.join(self.text_folder, f'{filename}.txt')
+        text_path = os.path.join(self.main_download_folder, f'{filename}.txt')
         with open(text_path, 'w', encoding='utf-8') as file:
             file.write(text)
+        print(f"Text saved to {text_path}")
         return text_path
 
     def compress_downloaded_files(self, zip_name='downloaded_files.zip'):
         """
-        Compress the downloaded text and media files into a ZIP archive.
+        Compress the downloaded files into a ZIP archive.
         """
-        # Compress both text_folder and media_folder into one zip file
         zip_path = os.path.join(self.main_download_folder, zip_name)
         shutil.make_archive(zip_path.replace('.zip', ''), 'zip', self.main_download_folder)
         print(f"Files compressed into {zip_path}")
@@ -93,34 +80,44 @@ class DataProcessor:
         """
         Fetch data from the specified Telegram channels.
         """
+        count_text = 0
         for channel_name in channel_names:
             try:
                 channel = await self.client.get_entity(channel_name)
                 async for msg in self.client.iter_messages(channel):
+                    timestamp = int(msg.date.timestamp())
+                    sender_id = msg.sender_id
+
                     if msg.text:
-                        # Save text data to text folder
-                        self.save_text_data(msg.text, f'text_{msg.date.timestamp()}')
+                        # Save text data with a timestamp-based filename
+                        filename = f'text_{sender_id}_{timestamp}'
+                        text_path = self.save_text_data(msg.text, filename)
                         self.data.append({
                             'type': 'text',
-                            'content': msg.text,
+                            'content': text_path,
                             'timestamp': msg.date,
-                            'sender': msg.sender_id
+                            'sender': sender_id
                         })
-                    if msg.media:
-                        # Handle media if necessary (e.g., download)
-                        media_path = await self.download_media(msg.media)
-                        self.data.append({
-                            'type': 'media',
-                            # 'content': str(msg.media),  # Placeholder for media
-                            'content': media_path,  # Store the media path
-                            'timestamp': msg.date,
-                            'sender': msg.sender_id
-                        })
+                        print(f'Downloading from {channel_name}')
+                        count_text =  count_text + 1
+                        print(f'Downloaded the {++count_text}th text file')
+
+                    # if msg.media:
+                    #     count_media = 0
+                    #     # Save media with a timestamp-based filename
+                    #     filename = f'media_{sender_id}_{timestamp}'
+                    #     media_path = await self.download_media(msg.media, filename)
+                    #     self.data.append({
+                    #         'type': 'media',
+                    #         'content': media_path,
+                    #         'timestamp': msg.date,
+                    #         'sender': sender_id
+                    #     })
+                    #     print(f'Downloaded the {++count}th file')
+                    #     print(f'Downloaded the {++count_media}th media file')
             except Exception as e:
                 print(f"Error fetching data from {channel_name}: {e}")
         print("Data fetched successfully!")
-
-
     def remove_emojis(self, text):
         emoji_pattern = re.compile(
             "["
@@ -163,8 +160,16 @@ class DataProcessor:
         cleaned_data = []
         for entry in self.data:
             if entry['type'] == 'text':
+                with open(entry['content'], 'r', encoding='utf-8') as file:
+                    text = file.read()
+                # Read the file content
+                with open(entry['content'], 'r', encoding='utf-8') as file:
+                    text_content = file.read()
+                # Preprocess the text
+                processed_text = self.preprocess_text(text_content)
                 cleaned_data.append({
-                    'message': self.preprocess_text(entry['content']),
+                    # 'message': self.preprocess_text(entry['content']),
+                    'message': processed_text,  # Save the processed text instead of the file path
                     'sender': entry['sender'],
                     'timestamp': entry['timestamp']
                 })
@@ -176,12 +181,11 @@ class DataProcessor:
                 })
         self.data = cleaned_data
 
-
     def store_data(self, filename='preprocessed_data.csv'):
         """
         Store the preprocessed data into a structured format (CSV for simplicity).
         """
         # Converting the structured data into a Pandas DataFrame
         df = pd.DataFrame(self.data)
-        df.to_csv(f'../data/{filename}', index=False)
+        df.to_csv(filename, index=False)
         print(f"Data stored in {filename}")

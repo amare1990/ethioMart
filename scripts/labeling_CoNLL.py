@@ -80,7 +80,7 @@ class CoNLLLabeler:
             self.labeled_data.append(labeled_message)
             self.labeled_data.append("")  # Separate entries with a blank line
 
-    def save_to_file(self, filename="labeled_dataset.conll"):
+    def save_to_file(self, filename="../data/labeled_dataset.conll"):
         """
         Save the labeled data to a file in CoNLL format.
         :param filename: Name of the file to save the data.

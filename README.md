@@ -1,11 +1,11 @@
 # Ethio Mart
 
-> Ethimart is a data science project to scarp data from five channels and enables users to view instant uploaded prices of data in the Telegram. It is developed using Python and various packages.
+> Ethiomart is a data science project that scrapes data from five channels and provides users with instant access to the latest product prices on Telegram. It is developed using Python and a variety of powerful libraries.
 
 ## Built With
 
 - Major languages used: Python3
-- Libraries: numpy, pandas, seaborn, matplotlib.pyplot, scikit-learn
+- Libraries: numpy, pandas, matplotlib.pyplot, scikit-learn
 - Tools and Technlogies used: jupyter notebook, Git, GitHub, Gitflow, VS code editor.
 
 ## Demonstration and Website
@@ -32,65 +32,50 @@ You can clone my project and use it freely and then contribute to this project.
 
 ### Dataset
 
- - `store.csv`, `train.csv`, and `test.csv` are the datasets from `Kaggle` used to conduct statistical Exploratory Data Analysis (EDA).
- - Run `df = pandas.read_csv("/path to your dataset")` to get the pandas data =frame for each dataset.
- - The store dataset is merged with the train and test data so that the `store` feature both in the train and test data are expanded more with details.
+- Implemented in the `scripts/data_preprocessing.py` module in this repo
+ - Fetched data from five Telegram channels, `channels = ['@ZemenExpress', '@nevacomputer', '@Shewabrand', '@modernshoppingcenter', '@aradabrand2']`
+ - Fetched only text data for easy processing and for shorter download time
+ - Preprocessed and clead data
+ - Saved the data in the pandas DataFrame format
+ - Each text message download has three columns/features, `timestamp`, `sender_id`, and `message`
 
 ### Project Requirements
 - Git, GitHub setup, adding `pylint' in the GitHub workflows
 - Statistical and EDA analysis on the data, ploting
-- Gaining insightful information by cinducting various tricks and visualizations
-- Preprocessing data
+- Feching data from at least from five Telegram channels
+- Preprocessing and save the data in the structured format
+- Labeling `message` data into `product`, `Price` and `location` and then saving in `CoNLL` format
+
 
 #### GitHub Action
 - Go to the main directory of this repo, create paths, `.github/workflows`. And then add `pylint` linters
 - Make it to check when Pull request is created
-- Run `pylint scripts/script_name.py` to check if the code follows the standard format
+- Run `pylint scripts/data_preprocessing.py` to check if the code follows the standard format
 - Run `autopep8 --in-place --aggressive --aggressive scripts/script_name.py` to automatically fix some linters errors
+- Run `pylint scripts/labeling_CoNLL.py` to check if the code follows the standard format
+- Run `autopep8 --in-place --aggressive --aggressive scripts/scripts/labeling_CoNLL.py` to automatically fix some linters errors
 
-### Customer Purchasing Behaviour Analysis
+### Data Preprocessing
 
-The main functionality is implemented in `customer_behaviour.py` module and the `customer_behaviour_pipeline_processing.py` pipelines all processes. `customer_behavior_eda.ipynb` is the notebook you call the method in the pipeline processor module.
+The main functionality is implemented in `cdata_preprocessing.py` module. `data_preprocessor.ipynb` is the notebook you open to run and view results.
 In this portion of the task, the following analysis has been conducted.
 
-- Fix mixed data types
-  Converted into string data type
-
+- Feching data from five channels
 - Data Summary:
     Summarize statistical descriptive statistics for both numerical features and object type features too.
 
-- Data Quality Check:
-    Identify and address missing values.
-    Detect outliers and remove.
-    Replace nan/empty/infinity/-infinity with median.
-    Save cleaned data
-- Visualizations of Sales and customers distribution via histograms
-- Visualizations for the effect of state holidayas over sales and customers.
-- Heatmap for relationships between numerical features
-- Finding top ten stores promo should be deployed for
-- Trends of customer behavior during store opening and closing times
-- Viewing stores that are open in weekdayas and the effect of this over sales
-- viewing how assortment types affect sales via visualizations
-- Effect of the distance to the next competitor on sales via visualizations
-- Effect of opening or re-opening of new competitor on stores via visualizations
 
-  Run /open the jupyter notebook named `customer_behavior_eda.ipynb` to clean data
+- Preprocessing data, removing emojis, spaces, and so on
+  Run /open the jupyter notebook named `data_preprocessor.ipynb` to to view the dat
 
-### Store Sales Prediction
-- The main functionality is implemented in `store_sales_prediction.py` module and the `store_sales_prediction_pipeline_processor.py` pipelines all processes.  `store_sales_prediction_pipeline_processor.ipynb` is the notebook you call the method in the pipeline processor module.
-- In this portion of the task, the following analysis has been conducted.
-- Extracting couple of features from the data
-- Preprocessing the data
-- Building `RandomForestRegression` regression model to predict total sales
-- Building `LSTM` regression model to predict total sales
-- Saving the built models
+### Labeling the Message
+- The main functionality is implemented in `labeling_CoNLL.py` module.`labeler_CoNLL.ipynb` is the notebook you will open to save and view the labeled data.
 
-### Creating API endpoints
-- Chose `Django rest framework` as a framework for building a REST api
-- Installed django and django rest framework
-- Imlemented a module, `services.py` inside the django app, `models_api_services` to add functionality to load the model built and add a functionality to preprocess the data and predict
-- Created an api endpoints to process posted requested data and predict. This functionality is written in the `views.py` script inside the django app.
-
+### Future Works
+- Refining labeling of product ames, prices and locations
+- Refining labeling using pretrained NLP algorithms
+- Training the model
+- Interpret models developed
 
 
 
@@ -98,7 +83,7 @@ In this portion of the task, the following analysis has been conducted.
 
 
 ### More information
-- You can refer to [this link](https://drive.google.com/file/d/1HqIHeeRZV59z3y82Cs9ZpGsOHzZ_ae_l/view?usp=sharing) to gain more insights about the reports of this project results.
+- You can refer to [this link]() to gain more insights about the reports of this project results.
 
 ## Authors
 

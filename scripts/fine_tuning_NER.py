@@ -100,8 +100,25 @@ class NERModel:
         self.train_dataset = self.train_dataset.map(tokenize_and_align_labels, batched=True)
         self.val_dataset = self.val_dataset.map(tokenize_and_align_labels, batched=True)
 
-  def setup_model(self):
+  def load_model(self):
         """
         Load the pre-trained model for token classification (NER).
         """
         self.model = AutoModelForTokenClassification.from_pretrained(self.model_name, num_labels=7)
+
+  def train_model(self):
+        """
+        Fine-tune the NER model using Hugging Face Trainer API.
+        """
+        training_args = TrainingArguments(
+            output_dir='./results',          # output directory
+            num_train_epochs=3,              # number of training epochs
+            per_device_train_batch_size=8,   # batch size for training
+            per_device_eval_batch_size=16,   # batch size for evaluation
+            warmup_steps=500,                # number of warmup steps for learning rate scheduler
+            weight_decay=0.01,               # strength of weight decay
+            logging_dir='./logs',            # directory for storing logs
+            evaluation_strategy="epoch",     # evaluation strategy to use
+            save_strategy="epoch",           # save model checkpoint after each epoch
+            load_best_model_at_end=True,     # load the best model when finished training
+        )

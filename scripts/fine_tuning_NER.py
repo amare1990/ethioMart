@@ -8,7 +8,7 @@ from transformers import AutoTokenizer, AutoModelForTokenClassification, Trainer
 
 
 class NERModel:
-  def __init__(self, model_name='XLM-Roberta', dataset_path='../data/labeled_dataset.conll'):
+  def __init__(self, model_name='XLM-Roberta-base', dataset_path='../data/labeled_dataset.conll'):
     """
     Initialize the NER model class with the model name and dataset path.
     :param model_name: The pre-trained model to use for fine-tuning (default: 'xlm-roberta-base').

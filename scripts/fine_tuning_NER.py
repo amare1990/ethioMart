@@ -2,6 +2,7 @@
 import pandas as pd
 
 from sklearn.model_selection import train_test_split
+from datasets import Dataset, DatasetDict
 
 
 
@@ -52,3 +53,17 @@ class NERModel:
       # Convert DataFrames to Hugging Face Dataset format
       self.train_dataset = Dataset.from_pandas(train_df)
       self.val_dataset = Dataset.from_pandas(val_df)
+
+  def map_labels(self, label):
+        """
+        Map CoNLL labels to a numerical value for token classification.
+        :param label: CoNLL entity label.
+        :return: Numerical label
+        """
+        label_map = {
+            'B-Product': 0, 'I-Product': 1,
+            'B-LOC': 2, 'I-LOC': 3,
+            'B-PRICE': 4, 'I-PRICE': 5,
+            'O': 6
+        }
+        return label_map.get(label, 6)  # Default to 'O' for outside entities

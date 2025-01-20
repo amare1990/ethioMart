@@ -3,6 +3,7 @@ import pandas as pd
 
 from sklearn.model_selection import train_test_split
 from datasets import Dataset, DatasetDict
+from transformers import AutoTokenizer, AutoModelForTokenClassification, Trainer, TrainingArguments, pipeline
 
 
 
@@ -67,3 +68,34 @@ class NERModel:
             'O': 6
         }
         return label_map.get(label, 6)  # Default to 'O' for outside entities
+
+  def tokenize_data(self):
+        """
+        Tokenize the data and align the labels with the tokens.
+        """
+        # Load pre-trained tokenizer
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+
+        def tokenize_and_align_labels(example):
+            """
+            Tokenize text and align the labels with the tokenized text.
+            """
+            # Tokenize text
+            tokenized_inputs = self.tokenizer(example['tokens'], truncation=True, padding='max_length', is_split_into_words=True)
+            labels = example['labels']
+
+            # Align labels with tokenized inputs
+            word_ids = tokenized_inputs.word_ids()
+            aligned_labels = []
+            for word_id in word_ids:
+                if word_id is None:
+                    aligned_labels.append(-100)  # Ignore padding tokens
+                else:
+                    aligned_labels.append(labels[word_id])
+
+            tokenized_inputs['labels'] = aligned_labels
+            return tokenized_inputs
+
+        # Apply tokenization and label alignment
+        self.train_dataset = self.train_dataset.map(tokenize_and_align_labels, batched=True)
+        self.val_dataset = self.val_dataset.map(tokenize_and_align_labels, batched=True)

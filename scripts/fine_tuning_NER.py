@@ -99,3 +99,9 @@ class NERModel:
         # Apply tokenization and label alignment
         self.train_dataset = self.train_dataset.map(tokenize_and_align_labels, batched=True)
         self.val_dataset = self.val_dataset.map(tokenize_and_align_labels, batched=True)
+
+  def setup_model(self):
+        """
+        Load the pre-trained model for token classification (NER).
+        """
+        self.model = AutoModelForTokenClassification.from_pretrained(self.model_name, num_labels=7)

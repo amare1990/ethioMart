@@ -141,3 +141,11 @@ class NERModel:
         print(f"Validation Results: {results}")
         return results
 
+  def save_model(self, output_dir='../data/fine_tuned_model'):
+        """
+        Save the fine-tuned model for future use.
+        """
+        self.model.save_pretrained(output_dir)
+        self.tokenizer.save_pretrained(output_dir)
+        print(f"Model saved in {output_dir}")
+

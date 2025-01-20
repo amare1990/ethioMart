@@ -16,8 +16,7 @@ class CoNLLLabeler:
         lines = message.split('\n')
         labeled_tokens = []
 
-        # Define keywords for B-PRODUCT, I-PRODUCT, B-PRICE, I-PRICE, B-LOC, I-LOC
-        product_keywords = ["Seal", "Stopper", "Air", "Quality", "Hot", "Cold", "Noise"]
+        # Define keywords for B-LOC, I-LOC
         location_keywords = ['Addis Ababa', 'ለቡ', 'ለቡ መዳህኒዓለም', 'መገናኛ', 'ቦሌ', 'ሜክሲኮ', "ፒያሳ", "ጊዮርጊስ", "ተፋር", "ራመት", "ታቦር", "ኦዳ", "ሱቅ"]
 
         # Process each line for entity recognition

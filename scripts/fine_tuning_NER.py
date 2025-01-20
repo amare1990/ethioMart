@@ -23,37 +23,47 @@ class NERModel:
     self.trainer = None
 
   def load_data(self):
-      """
-      Load the labeled dataset (in CoNLL format) and prepare the data for training.
-      """
-      # Load CoNLL data and convert it to a pandas DataFrame
-      with open(self.dataset_path, 'r', encoding='utf-8') as file:
-          lines = file.readlines()
+        """
+        Load the labeled dataset (in CoNLL format) and prepare the data for training.
+        """
+        # Load CoNLL data and convert it to a pandas DataFrame
+        with open(self.dataset_path, 'r', encoding='utf-8') as file:
+            lines = file.readlines()
 
-      # Process CoNLL formatted data into DataFrame
-      data = []
-      sentence = []
-      labels = []
+        # Process CoNLL formatted data into a list of dictionaries
+        data = []
+        sentence = []
+        labels = []
 
-      for line in lines:
-          if line.strip():  # If line is not empty
-              token, label = line.strip().split()
-              sentence.append(token)
-              labels.append(label)
-          else:
-              # Save sentence with its labels
-              data.append({'tokens': sentence, 'labels': labels})
-              sentence, labels = [], []  # Reset for next sentence
+        for line in lines:
+            if line.strip():  # If line is not empty
+                parts = line.strip().split(maxsplit=1)
+                if len(parts) == 2:
+                    token, label = parts
+                    sentence.append(token)
+                    labels.append(label)
+            else:
+                if sentence and labels:  # Ensure there is a valid sentence and labels
+                    data.append({'tokens': sentence, 'labels': labels})
+                    sentence, labels = [], []  # Reset for the next sentence
 
-      df = pd.DataFrame(data)
-      df['labels'] = df['labels'].apply(lambda x: [self.map_labels(label) for label in x])
+        # Handle any remaining sentence at the end of the file
+        if sentence and labels:
+            data.append({'tokens': sentence, 'labels': labels})
 
-      # Split the dataset into train and validation sets
-      train_df, val_df = train_test_split(df, test_size=0.2)
+        # Convert list of dictionaries to a DataFrame
+        df = pd.DataFrame(data)
 
-      # Convert DataFrames to Hugging Face Dataset format
-      self.train_dataset = Dataset.from_pandas(train_df)
-      self.val_dataset = Dataset.from_pandas(val_df)
+        # Map labels to their corresponding IDs
+        df['labels'] = df['labels'].apply(lambda x: [self.map_labels(label) for label in x])
+
+        # Split the dataset into train and validation sets
+        train_df, val_df = train_test_split(df, test_size=0.2, random_state=42)
+
+        # Convert DataFrames to Hugging Face Dataset format
+        self.train_dataset = Dataset.from_pandas(train_df)
+        self.val_dataset = Dataset.from_pandas(val_df)
+
 
   def map_labels(self, label):
         """

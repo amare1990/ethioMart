@@ -111,14 +111,25 @@ class NERModel:
         Fine-tune the NER model using Hugging Face Trainer API.
         """
         training_args = TrainingArguments(
-            output_dir='./results',          # output directory
+            output_dir='../data/results',          # output directory
             num_train_epochs=3,              # number of training epochs
             per_device_train_batch_size=8,   # batch size for training
             per_device_eval_batch_size=16,   # batch size for evaluation
             warmup_steps=500,                # number of warmup steps for learning rate scheduler
             weight_decay=0.01,               # strength of weight decay
-            logging_dir='./logs',            # directory for storing logs
+            logging_dir='../data/logs',            # directory for storing logs
             evaluation_strategy="epoch",     # evaluation strategy to use
             save_strategy="epoch",           # save model checkpoint after each epoch
             load_best_model_at_end=True,     # load the best model when finished training
         )
+
+        self.trainer = Trainer(
+          model=self.model,                         # the model to train
+          args=training_args,                       # training arguments
+          train_dataset=self.train_dataset,         # training dataset
+          eval_dataset=self.val_dataset,            # validation dataset
+        )
+
+         # Train the model
+        self.trainer.train()
+

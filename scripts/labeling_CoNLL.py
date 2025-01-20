@@ -17,39 +17,62 @@ class CoNLLLabeler:
         labeled_tokens = []
 
         # Define keywords for B-LOC, I-LOC
-        location_keywords = ['Addis Ababa', 'ለቡ', 'ለቡ መዳህኒዓለም', 'መገናኛ', 'ቦሌ', 'ሜክሲኮ', "ፒያሳ", "ጊዮርጊስ", "ተፋር", "ራመት", "ታቦር", "ኦዳ", "ሱቅ"]
+
+        location_keywords = ['Addis Ababa', 'ለቡ', 'ለቡ መዳህኒዓለም', 'መገናኛ', 'ቦሌ', 'ሜክሲኮ', "ፒያሳ", "ጊዮርጊስ",
+                             "ተፋር", "ራመት", "ታቦር", "ኦዳ", "ሱቅ", "ቁ1መገናኛ", "ቁ2ፒያሳ", "4 ኪሎ", "4ኪሎ", "ቃሊቲ", "ሰሚት",
+                             "summit", "ሲኤምሲ", "CMC", "ሐያት", "ሀያት", "hayat", "ካሳንችስ", "ካሣንችስ", "ካዛንችስ",
+                             "ሃያ ሁለት", "ሃያሁለት", "ሾላ", "መርካቶ", "ሜክሲኮ", "Mexico", "mexico", "Mercato", "mercato", "merkato"
+        ]
 
         # Process each line for entity recognition
         for line in lines:
             tokens = re.findall(r'\S+', line)  # Tokenize the line
 
-
             # Process product entities
             if len(tokens) >= 5:  # Example threshold for B-PRODUCT
                 product_name = tokens[:5]  # First 5 tokens are part of B-PRODUCT
-                product = ' '.join(product_name)
-                labeled_tokens.append(f"{product} B-PRODUCT")
+                labeled_tokens.append(f"{product_name[0]} B-PRODUCT")
                 for token in product_name[1:]:
                     labeled_tokens.append(f"{token} I-PRODUCT")
 
             # Process price entities
             for i, token in enumerate(tokens):
-                # Match prices like "ዋጋ 400ብር" where ዋጋ is the label and 400ብር is the price
-                if re.match(r'ዋጋ \d+ብር', ' '.join(tokens[i:i+2])):  # Match the "ዋጋ <number>ብር" pattern
-                    b_price = ' '.join(tokens[i:i+2])
-                    labeled_tokens.append(f"{b_price} B-PRICE")  # Label "ዋጋ 400ብር" as B-PRICE
-
-                    # Extract the number part (e.g., 400) and label it as I-PRICE
-                    number_part = re.search(r'\d+', tokens[i + 1]).group()  # Extract number from the second token
-                    labeled_tokens.append(f"{number_part} I-PRICE")  # Label the number part as I-PRICE
+                if re.match(r'\d+ብር', token) or 'ዋጋ' in token:  # Match tokens with price patterns
+                    # Check for "ዋጋ" preceding the price
+                    if token == "ዋጋ" and i + 1 < len(tokens):
+                        labeled_tokens.append(f"{token} B-PRICE")
+                        labeled_tokens.append(f"{tokens[i + 1]} I-PRICE")
+                    # Directly label the token if it matches the price pattern
+                    elif re.match(r'\d+ብር', token):
+                        labeled_tokens.append(f"{token} B-PRICE")
+                    else:
+                        labeled_tokens.append(f"{token} O")
 
             # Process location entities
-            for i, token in enumerate(tokens):
-                if any(loc in token for loc in location_keywords):
-                    if i == 0 or tokens[i - 1] not in ["ቁ", "ቦሌ"]:  # Avoid false positives
+            if "አድራሻ" in tokens:
+                for i, token in enumerate(tokens):
+                    if token == "አድራሻ" and i + 1 < len(tokens):  # Ensure there is a next token
+                        # Label the next token as B-LOC
+                        labeled_tokens.append(f"{tokens[i + 1]} B-LOC")
+
+                        # Label the next five tokens but skip one in between
+                        for j in range(2, 7):  # From i+2 to i+6 (5 tokens)
+                            if i + j < len(tokens):  # Ensure we don't go out of bounds
+                                labeled_tokens.append(f"{tokens[i + j]} I-LOC")
+            else:
+                # Handle the case where "አድራሻ" is not in the tokens
+                for i, token in enumerate(tokens):
+                    # Match token against location_tokens using regex
+                    if any(re.fullmatch(loc, token) for loc in location_keywords):
+                        # Label the first matching token as B-LOC
                         labeled_tokens.append(f"{token} B-LOC")
-                    else:
-                        labeled_tokens.append(f"{token} I-LOC")
+
+                        # Label the next three tokens as I-LOC
+                        for j in range(1, 4):  # Up to the next three tokens
+                            if i + j < len(tokens):
+                                labeled_tokens.append(f"{tokens[i + j]} I-LOC")
+                        break  # Exit loop after labeling the first match
+
 
             # Default to O for other tokens (outside any entities)
             for token in tokens:

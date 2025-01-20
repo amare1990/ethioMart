@@ -133,3 +133,11 @@ class NERModel:
          # Train the model
         self.trainer.train()
 
+  def evaluate_model(self):
+        """
+        Evaluate the fine-tuned model on the validation set.
+        """
+        results = self.trainer.evaluate()
+        print(f"Validation Results: {results}")
+        return results
+

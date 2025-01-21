@@ -103,3 +103,9 @@ class NERModelComparison:
             logging_dir='./logs',
             load_best_model_at_end=True,
         )
+
+        def compute_metrics(pred):
+            labels = pred.label_ids.flatten()
+            preds = pred.predictions.argmax(-1).flatten()
+            accuracy = accuracy_score(labels, preds)
+            return {"accuracy": accuracy}

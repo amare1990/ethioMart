@@ -34,3 +34,32 @@ class NERModelComparison:
             'O': 6
         }
         return label_map.get(label, 6)
+
+    def load_data(self):
+        """
+        Load and process the CoNLL-formatted dataset into train/validation splits.
+        """
+        # Load and process the CoNLL dataset
+        with open(self.dataset_path, 'r', encoding='utf-8') as file:
+            lines = file.readlines()
+
+        data = []
+        sentence, labels = [], []
+
+        for line in lines:
+            if line.strip():
+                token, label = line.strip().split()
+                sentence.append(token)
+                labels.append(label)
+            else:
+                if sentence:  # End of a sentence
+                    data.append({'tokens': sentence, 'labels': labels})
+                    sentence, labels = [], []
+
+        df = pd.DataFrame(data)
+        df['labels'] = df['labels'].apply(lambda x: [self.map_labels(label) for label in x])
+
+        # Split into train and validation sets
+        train_df, val_df = train_test_split(df, test_size=0.2)
+        self.train_dataset = Dataset.from_pandas(train_df)
+        self.val_dataset = Dataset.from_pandas(val_df)

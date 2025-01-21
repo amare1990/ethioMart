@@ -78,3 +78,9 @@ class NERModelComparison:
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.train_dataset = self.train_dataset.map(tokenize_and_align_labels, batched=True)
         self.val_dataset = self.val_dataset.map(tokenize_and_align_labels, batched=True)
+
+    def load_model(self, model_name):
+        """
+        Load the pre-trained model for token classification.
+        """
+        return AutoModelForTokenClassification.from_pretrained(model_name, num_labels=7)

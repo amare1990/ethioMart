@@ -118,3 +118,7 @@ class NERModelComparison:
             eval_dataset=self.val_dataset,
             compute_metrics=compute_metrics,
         )
+
+        trainer.train()
+        metrics = trainer.evaluate(self.val_dataset)
+        return metrics['eval_accuracy']

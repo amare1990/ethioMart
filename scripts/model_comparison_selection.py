@@ -84,3 +84,22 @@ class NERModelComparison:
         Load the pre-trained model for token classification.
         """
         return AutoModelForTokenClassification.from_pretrained(model_name, num_labels=7)
+
+    def train_and_evaluate(self, model_name):
+        """
+        Train and evaluate the model, returning the best validation accuracy.
+        """
+        # Prepare the model and training arguments
+        model = self.load_model(model_name)
+        training_args = TrainingArguments(
+            output_dir=f'./results/{model_name}',
+            num_train_epochs=3,
+            per_device_train_batch_size=8,
+            per_device_eval_batch_size=16,
+            warmup_steps=500,
+            weight_decay=0.01,
+            evaluation_strategy="epoch",
+            save_strategy="epoch",
+            logging_dir='./logs',
+            load_best_model_at_end=True,
+        )

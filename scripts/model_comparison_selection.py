@@ -9,7 +9,7 @@ from sklearn.metrics import accuracy_score
 
 
 class NERModelComparison:
-    def __init__(self, dataset_path='labeled_data.conll', models=None):
+    def __init__(self, dataset_path='../data/labeled_dataset.conll', models=None):
         """
         Initialize the model comparison class with dataset path and model options.
         :param dataset_path: Path to the labeled dataset in CoNLL format.
@@ -21,3 +21,16 @@ class NERModelComparison:
         self.train_dataset = None
         self.val_dataset = None
         self.model_performance = {}
+
+
+    def map_labels(self, label):
+        """
+        Map CoNLL labels to numerical values for token classification.
+        """
+        label_map = {
+            'B-Product': 0, 'I-Product': 1,
+            'B-LOC': 2, 'I-LOC': 3,
+            'B-PRICE': 4, 'I-PRICE': 5,
+            'O': 6
+        }
+        return label_map.get(label, 6)

@@ -12,6 +12,7 @@ class CoNLLLabeler:
 
 
     def label_message_utf8_with_birr(self, message):
+        message = str(message)  # This line is added to handle float values
         # Split the message into lines
         lines = message.split('\n')
         labeled_tokens = []
@@ -21,9 +22,7 @@ class CoNLLLabeler:
         location_keywords = ['Addis Ababa', 'ለቡ', 'ለቡ መዳህኒዓለም', 'መገናኛ', 'ቦሌ', 'ሜክሲኮ', "ፒያሳ", "ጊዮርጊስ",
                              "ተፋር", "ራመት", "ታቦር", "ኦዳ", "ሱቅ", "ቁ1መገናኛ", "ቁ2ፒያሳ", "4 ኪሎ", "4ኪሎ", "ቃሊቲ", "ሰሚት",
                              "summit", "ሲኤምሲ", "CMC", "ሐያት", "ሀያት", "hayat", "ካሳንችስ", "ካሣንችስ", "ካዛንችስ",
-                             "ሃያ ሁለት", "ሃያሁለት", "ሾላ", "መርካቶ", "ሜክሲኮ", "Mexico", "mexico", "Mercato", "mercato",
-                             "merkato", "ድሬ ዳዋ", "ባሕር ዳር", "ባህር ዳር", "ጎንደር", "ደሴ", "ሃዋሳ", "ሐዋሳ", "አዋሳ", "አዳማ",
-                              "ሐረር", "መቀሌ"
+                             "ሃያ ሁለት", "ሃያሁለት", "ሾላ", "መርካቶ", "ሜክሲኮ", "Mexico", "mexico", "Mercato", "mercato", "merkato"
         ]
 
         # Process each line for entity recognition
@@ -69,6 +68,8 @@ class CoNLLLabeler:
                         j += 1
                     break
 
+
+
             # Process location entities
             if "አድራሻ" in tokens:
                 for i, token in enumerate(tokens):
@@ -76,7 +77,7 @@ class CoNLLLabeler:
                         # Label the next token as B-LOC
                         labeled_tokens.append(f"{tokens[i + 1]} B-LOC")
 
-                        # Label the next eight tokens but skip one in between
+                        # Label the next five tokens but skip one in between
                         for j in range(2, 10):  # From i+2 to i+6 (5 tokens)
                             if i + j < len(tokens):  # Ensure we don't go out of bounds
                                 labeled_tokens.append(f"{tokens[i + j]} I-LOC")
@@ -94,10 +95,14 @@ class CoNLLLabeler:
                                 labeled_tokens.append(f"{tokens[i + j]} I-LOC")
                         break  # Exit loop after labeling the first match
 
+            # # Print the labeled tokens
+            # print(labeled_tokens)
+
 
             # Default to O for other tokens (outside any entities)
             for token in tokens:
-                if token not in [t.split()[0] for t in labeled_tokens]:  # Check if token is already labeled
+                if token not in [t.split()[0] for t in labeled_tokens] and not re.match(r'(\d)ብር', token):
+
                     labeled_tokens.append(f"{token} O")
 
         return "\n".join(labeled_tokens)

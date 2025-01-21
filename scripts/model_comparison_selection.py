@@ -122,3 +122,18 @@ class NERModelComparison:
         trainer.train()
         metrics = trainer.evaluate(self.val_dataset)
         return metrics['eval_accuracy']
+
+    def compare_models(self):
+        """
+        Compare models and select the best one based on validation accuracy.
+        """
+        for model_name in self.models:
+            print(f"Evaluating model: {model_name}")
+            self.tokenize_data(model_name)
+            accuracy = self.train_and_evaluate(model_name)
+            self.model_performance[model_name] = accuracy
+            print(f"Model: {model_name}, Validation Accuracy: {accuracy}")
+
+        best_model = max(self.model_performance, key=self.model_performance.get)
+        print(f"Best model: {best_model} with Validation Accuracy: {self.model_performance[best_model]}")
+        return best_model

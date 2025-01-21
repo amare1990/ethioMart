@@ -39,45 +39,35 @@ class CoNLLLabeler:
 
             # Process price entities
             for i, token in enumerate(tokens):
-                # Check for price patterns with "ብር" included
+                # Check for price patterns with "ብር" included in the same token (e.g., "400ብር")
                 bundled_match = re.match(r'(\d+)(ብር)', token)  # Match "400ብር"
                 if bundled_match:
                     # Split and label the price and currency
                     price, currency = bundled_match.groups()
-                    labeled_tokens.append(f"ዋጋ B-PRICE") if token == "ዋጋ" else None
-                    labeled_tokens.append(f"{price} I-PRICE")
-                    labeled_tokens.append(f"{currency} O")
+                    labeled_tokens.append(f"{token} B-PRICE") if token == "ዋጋ" else None
+                    labeled_tokens.append(f"{price} I-PRICE")  # Only the numeric part is I-PRICE
+                    labeled_tokens.append(f"{currency} O")  # Currency "ብር" is labeled as O
                     break
 
                 # Check for "ዋጋ" preceding the price
                 if token == "ዋጋ" and i + 1 < len(tokens):
                     labeled_tokens.append(f"{token} B-PRICE")
-                    # Check the next token for price and "ብር" together or separated
-                    next_token = tokens[i + 1]
-                    if re.match(r'\d+\s*ብር', next_token):  # Match price with "ብር"
-                        price_match = re.match(r'(\d+)', next_token)  # Extract just the number
-                        if price_match:
-                            labeled_tokens.append(f"{price_match.group(1)} I-PRICE")
-                    elif re.match(r'\d+', next_token) and i + 2 < len(tokens) and tokens[i + 2] == "ብር":
-                        # Handle separated price and "ብር" (e.g., "800 ብር")
-                        labeled_tokens.append(f"{next_token} I-PRICE")
-                        labeled_tokens.append(f"{tokens[i + 2]} O")  # Label "ብር" as outside
+                    # Process tokens following "ዋጋ"
+                    j = i + 1
+                    while j < len(tokens):
+                        next_token = tokens[j]
+                        # Handle prices like "400", "400ብር", or alphanumeric tokens like "22L"
+                        if re.match(r'\d+[A-Za-z]*', next_token):  # Match numeric or alphanumeric price
+                            bundled_match = re.match(r'(\d+)(ብር)?', next_token)  # Match "400ብር" or "400"
+                            if bundled_match:
+                                price, currency = bundled_match.groups()
+                                labeled_tokens.append(f"{price} I-PRICE")  # Label the numeric price
+                                if currency:  # If "ብር" is present, label it as O
+                                    labeled_tokens.append(f"{currency} O")
+                        else:
+                            break
+                        j += 1
                     break
-
-                # Directly label the token if it matches the price pattern
-                if re.match(r'\d+\s*ብር', token) and not 'ዋጋ' in token:
-                    if token not in [t.split()[0] for t in labeled_tokens]:  # Check if token is already labeled
-                        labeled_tokens.append(f"{token} B-PRICE")
-                        price_match = re.match(r'(\d+)', token)  # Extract only the number
-                        if price_match:
-                            labeled_tokens.append(f"{price_match.group(1)} I-PRICE")
-                    break
-
-                # Handle "ብር" separately if not part of a price pattern
-                if token == "ብር":
-                    labeled_tokens.append(f"{token} O")
-                else:
-                    labeled_tokens.append(f"{token} O")
 
             # Process location entities
             if "አድራሻ" in tokens:

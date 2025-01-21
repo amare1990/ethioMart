@@ -109,3 +109,12 @@ class NERModelComparison:
             preds = pred.predictions.argmax(-1).flatten()
             accuracy = accuracy_score(labels, preds)
             return {"accuracy": accuracy}
+
+        # Use Trainer to fine-tune and evaluate
+        trainer = Trainer(
+            model=model,
+            args=training_args,
+            train_dataset=self.train_dataset,
+            eval_dataset=self.val_dataset,
+            compute_metrics=compute_metrics,
+        )

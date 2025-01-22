@@ -75,3 +75,38 @@ class NERModelInterpretability:
         # Print the SHAP values and the true labels for analysis
         print(f"True labels: {true_labels}")
         print(f"SHAP values for the sentence: {shap_values}")
+
+    def interpret_with_lime(self, sentence_idx=0):
+        """
+        Use LIME to explain the model's predictions for a given sentence.
+        :param sentence_idx: Index of the sentence to interpret (default: 0).
+        """
+        # Choose a sentence from the dataset
+        sentence = self.dataset['sentences'][sentence_idx]
+        true_labels = self.dataset['labels'][sentence_idx]
+
+        # Tokenize the sentence
+        inputs = self.tokenizer(sentence, return_tensors='pt', padding=True, truncation=True)
+
+        # Define a LIME text explainer
+        lime_explainer = lime.lime_text.LimeTextExplainer(class_names=list(set([label for sublist in self.dataset['labels'] for label in sublist])))
+
+        def predict_fn(texts):
+            """
+            Predict function for LIME: convert text to input IDs and get predictions.
+            :param texts: List of text sentences.
+            :return: List of model predictions (probabilities).
+            """
+            tokenized_inputs = self.tokenizer(texts, return_tensors='pt', padding=True, truncation=True)
+            logits = self.model(**tokenized_inputs).logits
+            probabilities = torch.nn.functional.softmax(logits, dim=-1)
+            return probabilities.detach().numpy()
+
+        # Generate explanation using LIME
+        explanation = lime_explainer.explain_instance(' '.join(sentence), predict_fn, num_features=10)
+
+        # Display explanation
+        explanation.show_in_notebook(text=True)
+
+        # Print the true labels for analysis
+        print(f"True labels: {true_labels}")

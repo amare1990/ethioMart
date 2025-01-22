@@ -60,7 +60,7 @@ class NERModelComparison:
         df['labels'] = df['labels'].apply(lambda x: [self.map_labels(label) for label in x])
 
         # Split into train and validation sets
-        train_df, val_df = train_test_split(df, test_size=0.2)
+        train_df, val_df = train_test_split(df, test_size=0.2, random_state=42)
         self.train_dataset = Dataset.from_pandas(train_df)
         self.val_dataset = Dataset.from_pandas(val_df)
 
@@ -68,14 +68,39 @@ class NERModelComparison:
         """
         Tokenize and align labels for a specific model.
         """
-        def tokenize_and_align_labels(example):
-            tokenized_inputs = self.tokenizer(example['tokens'], truncation=True, padding='max_length', is_split_into_words=True)
-            word_ids = tokenized_inputs.word_ids()
-            aligned_labels = [-100 if word_id is None else example['labels'][word_id] for word_id in word_ids]
-            tokenized_inputs['labels'] = aligned_labels
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+        def tokenize_and_align_labels(examples):
+            """
+            Tokenize the input sentence and align the labels with the tokenized text.
+            """
+            tokenized_inputs = self.tokenizer(
+                examples['tokens'], truncation=True, padding='max_length', is_split_into_words=True
+            )
+
+            all_ner_tags = []
+            for i, labels in enumerate(examples['labels']):
+                word_ids = tokenized_inputs.word_ids(batch_index=i)  # Get word ids for each token
+                previous_word_idx = None
+                label_ids = []
+                for word_idx in word_ids:
+                    if word_idx is None:
+                        label_ids.append(-100)
+                    elif word_idx != previous_word_idx:
+                        # Handle cases where word_idx might be out of range
+                        if word_idx < len(labels):
+                            label_ids.append(labels[word_idx])
+                        else:
+                            label_ids.append(self.map_labels('O'))  # Assign 'O' if out of range
+                    else:
+                        label_ids.append(-100)
+                    previous_word_idx = word_idx
+                all_ner_tags.append(label_ids)
+
+            tokenized_inputs['labels'] = all_ner_tags
             return tokenized_inputs
 
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        # Apply tokenization and label alignment
         self.train_dataset = self.train_dataset.map(tokenize_and_align_labels, batched=True)
         self.val_dataset = self.val_dataset.map(tokenize_and_align_labels, batched=True)
 
@@ -85,14 +110,14 @@ class NERModelComparison:
         """
         return AutoModelForTokenClassification.from_pretrained(model_name, num_labels=7)
 
-    def train_and_evaluate(self, model_name):
+    def train_model(self, model_name):
         """
         Train and evaluate the model, returning the best validation accuracy.
         """
         # Prepare the model and training arguments
         model = self.load_model(model_name)
         training_args = TrainingArguments(
-            output_dir=f'./results/{model_name}',
+            output_dir=f'../data/results/{model_name}',
             num_train_epochs=3,
             per_device_train_batch_size=8,
             per_device_eval_batch_size=16,
@@ -100,40 +125,77 @@ class NERModelComparison:
             weight_decay=0.01,
             evaluation_strategy="epoch",
             save_strategy="epoch",
-            logging_dir='./logs',
+            logging_dir='../data/logs',
             load_best_model_at_end=True,
+            seed=42,
         )
 
-        def compute_metrics(pred):
-            labels = pred.label_ids.flatten()
-            preds = pred.predictions.argmax(-1).flatten()
-            accuracy = accuracy_score(labels, preds)
-            return {"accuracy": accuracy}
-
-        # Use Trainer to fine-tune and evaluate
+        # Fine-tune the model
         trainer = Trainer(
             model=model,
             args=training_args,
             train_dataset=self.train_dataset,
             eval_dataset=self.val_dataset,
-            compute_metrics=compute_metrics,
         )
 
+        start_time = time.time()
+        print("\n*********************************************************\n")
+        print(f'Starting training with model: {model_name}')
         trainer.train()
-        metrics = trainer.evaluate(self.val_dataset)
-        return metrics['eval_accuracy']
+        print(f'Finished training with model: {model_name}')
+        print('\n*********************************************************\n')
+        training_time = time.time() - start_time
+        return model, training_time
+
+
+    def evaluate_model(self, model):
+        """
+        Evaluate the fine-tuned model on the validation set.
+        :param model: Fine-tuned NER model.
+        :return: Evaluation metrics (accuracy, f1-score, etc.).
+        """
+        print("\n*********************************************************\n")
+        print(f'Starting evaluating with model: {model}')
+        trainer = Trainer(model=model)
+        start_time = time.time()
+        predictions, labels, _ = trainer.predict(self.val_dataset)
+        testing_time = time.time() - start_time
+        predictions = predictions.argmax(axis=-1)
+        accuracy = accuracy_score(labels.flatten(), predictions.flatten())
+        return testing_time, accuracy
 
     def compare_models(self):
         """
-        Compare models and select the best one based on validation accuracy.
+        Compare multiple models based on performance metrics (accuracy, speed, etc.).
+        :return: Best-performing model based on accuracy.
         """
         for model_name in self.models:
-            print(f"Evaluating model: {model_name}")
-            self.tokenize_data(model_name)
-            accuracy = self.train_and_evaluate(model_name)
-            self.model_performance[model_name] = accuracy
-            print(f"Model: {model_name}, Validation Accuracy: {accuracy}")
+            print(f"Fine-tuning and evaluating {model_name}...")
 
-        best_model = max(self.model_performance, key=self.model_performance.get)
-        print(f"Best model: {best_model} with Validation Accuracy: {self.model_performance[best_model]}")
-        return best_model
+            # Tokenize data
+            self.tokenize_data(model_name)
+
+            # Fine-tune the model
+            model, training_time = self.train_model(model_name)
+
+            # Evaluate the model
+            testing_time, accuracy = self.evaluate_model(model)
+            # accuracy = self.evaluate_model(model)
+            self.model_performance[model_name] = {
+                'accuracy': accuracy,
+                'testing_time': testing_time,
+                'training_time': training_time
+            }
+            print(f"Model: {model_name}, Accuracy: {accuracy} \n Training Time: {training_time} seconds, testing_time: {testing_time}")
+
+        # Select the best model based on accuracy
+        best_model_accuracy = max(self.model_performance, key=lambda x: self.model_performance[x]['accuracy'])
+        best_model_speed = min(self.model_performance, key=lambda x: self.model_performance[x]['testing_time'])
+        best_model_training_speed = min(self.model_performance, key=lambda x: self.model_performance[x]['training_time'])
+
+        # Print best models in terms of already selected performance metrics
+        print(f"Best model (Accuracy): {best_model_accuracy} with Accuracy: {self.model_performance[best_model_accuracy]['accuracy']}")
+        print(f"Best model (Speed): {best_model_speed} with Speed: {self.model_performance[best_model_speed]['testing_time']}")
+        print(f"Best model (Training Time): {best_model_training_speed} with Training Time: {self.model_performance[best_model_training_speed]['training_time']}")
+
+        return best_model_accuracy, best_model_speed, best_model_training_speed

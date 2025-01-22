@@ -5,8 +5,8 @@
 ## Built With
 
 - Major languages used: Python3
-- Libraries: numpy, pandas, matplotlib.pyplot, scikit-learn
-- Tools and Technlogies used: jupyter notebook, Git, GitHub, Gitflow, VS code editor.
+- Libraries: numpy, pandas, matplotlib.pyplot, scikit-learn, Torch, Transformers
+- Tools and Technlogies used: jupyter notebook, Google Colab, Git, GitHub, Gitflow, VS code editor.
 
 ## Demonstration and Website
 

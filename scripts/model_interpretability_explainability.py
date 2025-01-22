@@ -4,165 +4,76 @@ import lime.lime_text
 import numpy as np
 import torch
 from transformers import AutoTokenizer, AutoModelForTokenClassification
-from sklearn.metrics import classification_report
-from datasets import load_dataset
 import matplotlib.pyplot as plt
 
 
 class NERModelInterpretability:
-    def __init__(self, model_name='xlm-roberta-base', dataset_path='labeled_data.conll'):
+    def __init__(self, model_paths=None):
         """
-        Initialize the interpretability class for the NER model.
-        :param model_name: Pre-trained model name for token classification (default: 'xlm-roberta-base').
-        :param dataset_path: Path to the labeled dataset in CoNLL format (default: 'labeled_data.conll').
+        Initialize the interpretability class for multiple NER models.
+        :param model_paths: List of paths to pre-trained models (default: three models in ../data/models_trained).
         """
-        self.model_name = model_name
-        self.dataset_path = dataset_path
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.model = AutoModelForTokenClassification.from_pretrained(model_name)
-        self.dataset = self.load_and_prepare_data()
+        self.model_paths = model_paths or [
+            "../data/models_trained/model1",
+            "../data/models_trained/model2",
+            "../data/models_trained/model3",
+        ]
+        self.models = [self.load_model(path) for path in self.model_paths]
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_paths[0])
 
-
-    def load_and_prepare_data(self):
+    @staticmethod
+    def load_model(model_path):
         """
-        Load the dataset and prepare for model evaluation.
-        :return: Loaded dataset for analysis.
+        Load a pre-trained token classification model from the specified path.
+        :param model_path: Path to the pre-trained model.
+        :return: Loaded model.
         """
-        # Load the dataset from CoNLL format
-        with open(self.dataset_path, 'r', encoding='utf-8') as file:
-            lines = file.readlines()
+        return AutoModelForTokenClassification.from_pretrained(model_path)
 
-        # Process the CoNLL formatted data into sentences and labels
-        sentences = []
-        labels = []
-        sentence = []
-        label = []
-
-        for line in lines:
-            if line.strip():
-                token, label_token = line.strip().split()
-                sentence.append(token)
-                label.append(label_token)
-            else:
-                sentences.append(sentence)
-                labels.append(label)
-                sentence, label = [], []
-
-        return {'sentences': sentences, 'labels': labels}
-
-    def interpret_with_shap(self, sentence_idx=0):
+    def interpret_with_shap(self, sentence):
         """
-        Use SHAP to interpret the model's predictions for a given sentence.
-        :param sentence_idx: Index of the sentence to interpret (default: 0).
+        Use SHAP to interpret the models' predictions for a single sentence.
+        :param sentence: The sentence to interpret.
         """
-        # Choose a sentence from the dataset
-        sentence = self.dataset['sentences'][sentence_idx]
-        true_labels = self.dataset['labels'][sentence_idx]
-
         # Tokenize the sentence
         inputs = self.tokenizer(sentence, return_tensors='pt', padding=True, truncation=True)
 
-        # Define a SHAP explainer for the model
-        explainer = shap.Explainer(self.model, self.tokenizer)
+        for model in self.models:
+            print(f"Interpreting model at: {model.base_model_prefix}")
+            # Define a SHAP explainer
+            explainer = shap.Explainer(lambda x: model(**self.tokenizer(x, return_tensors='pt', padding=True, truncation=True)).logits, self.tokenizer)
 
-        # Generate SHAP values for the sentence
-        shap_values = explainer(inputs['input_ids'])
+            # Generate SHAP values for the input sentence
+            shap_values = explainer([sentence])
 
-        # Visualize SHAP values (displaying how much each token contributed to the classification)
-        shap.initjs()
-        shap.force_plot(shap_values[0].values, feature_names=sentence, matplotlib=True)
+            # Visualize SHAP values
+            shap.initjs()
+            shap.force_plot(shap_values[0].values, feature_names=self.tokenizer.tokenize(sentence), matplotlib=True)
 
-        # Print the SHAP values and the true labels for analysis
-        print(f"True labels: {true_labels}")
-        print(f"SHAP values for the sentence: {shap_values}")
-
-    def interpret_with_lime(self, sentence_idx=0):
+    def interpret_with_lime(self, sentence):
         """
-        Use LIME to explain the model's predictions for a given sentence.
-        :param sentence_idx: Index of the sentence to interpret (default: 0).
+        Use LIME to explain the models' predictions for a single sentence.
+        :param sentence: The sentence to interpret.
         """
-        # Choose a sentence from the dataset
-        sentence = self.dataset['sentences'][sentence_idx]
-        true_labels = self.dataset['labels'][sentence_idx]
-
-        # Tokenize the sentence
-        inputs = self.tokenizer(sentence, return_tensors='pt', padding=True, truncation=True)
-
         # Define a LIME text explainer
-        lime_explainer = lime.lime_text.LimeTextExplainer(class_names=list(set([label for sublist in self.dataset['labels'] for label in sublist])))
+        lime_explainer = lime.lime_text.LimeTextExplainer(class_names=["Entity", "Non-Entity"])
 
         def predict_fn(texts):
             """
-            Predict function for LIME: convert text to input IDs and get predictions.
-            :param texts: List of text sentences.
-            :return: List of model predictions (probabilities).
+            Predict function for LIME: tokenize texts and return probabilities from all models.
+            :param texts: List of text inputs.
+            :return: Average predictions across all models.
             """
-            tokenized_inputs = self.tokenizer(texts, return_tensors='pt', padding=True, truncation=True)
-            logits = self.model(**tokenized_inputs).logits
-            probabilities = torch.nn.functional.softmax(logits, dim=-1)
-            return probabilities.detach().numpy()
+            model_outputs = []
+            for model in self.models:
+                tokenized_inputs = self.tokenizer(texts, return_tensors='pt', padding=True, truncation=True)
+                logits = model(**tokenized_inputs).logits
+                probabilities = torch.nn.functional.softmax(logits, dim=-1)
+                model_outputs.append(probabilities.detach().numpy())
+            return np.mean(model_outputs, axis=0)
 
         # Generate explanation using LIME
-        explanation = lime_explainer.explain_instance(' '.join(sentence), predict_fn, num_features=10)
+        explanation = lime_explainer.explain_instance(sentence, predict_fn, num_features=10)
 
         # Display explanation
         explanation.show_in_notebook(text=True)
-
-        # Print the true labels for analysis
-        print(f"True labels: {true_labels}")
-
-    def analyze_difficult_cases(self):
-        """
-        Analyze difficult cases where the model struggles to identify entities correctly.
-        :return: List of difficult cases with predictions and true labels.
-        """
-        difficult_cases = []
-
-        for idx, sentence in enumerate(self.dataset['sentences']):
-            # Tokenize the sentence
-            inputs = self.tokenizer(sentence, return_tensors='pt', padding=True, truncation=True)
-            logits = self.model(**inputs).logits
-            predictions = torch.argmax(logits, dim=-1)
-
-            # Get predicted labels
-            predicted_labels = [self.model.config.id2label[p.item()] for p in predictions[0]]
-
-            # Compare with true labels
-            true_labels = self.dataset['labels'][idx]
-
-            if predicted_labels != true_labels:
-                difficult_cases.append({
-                    'sentence': sentence,
-                    'predicted_labels': predicted_labels,
-                    'true_labels': true_labels
-                })
-
-        return difficult_cases
-
-    def generate_report(self):
-        """
-        Generate a report with insights on the model's decision-making process.
-        :return: A dictionary of model interpretation insights.
-        """
-        difficult_cases = self.analyze_difficult_cases()
-
-        # Report the difficult cases
-        if difficult_cases:
-            print("Difficult cases where the model struggled:")
-            for case in difficult_cases:
-                print(f"Sentence: {' '.join(case['sentence'])}")
-                print(f"Predicted labels: {case['predicted_labels']}")
-                print(f"True labels: {case['true_labels']}")
-                print()
-        else:
-            print("No difficult cases identified.")
-
-        # Example analysis report
-        report = {
-            'model_performance': 'Overall model performance analysis here...',
-            'difficult_cases': difficult_cases,
-            'shap_analysis': 'SHAP analysis details here...',
-            'lime_analysis': 'LIME analysis details here...'
-        }
-
-        return report

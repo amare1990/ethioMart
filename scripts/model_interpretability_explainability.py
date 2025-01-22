@@ -88,3 +88,86 @@ class NERModelInterpretability:
 
         print("\n=== LIME Analysis ===")
         self.interpret_with_lime(sentence)
+
+    def analyze_difficult_cases(self, sentences, true_labels):
+        """
+        Analyze difficult cases where the models struggle to identify entities correctly.
+        :param sentences: List of sentences to analyze.
+        :param true_labels: Corresponding ground truth labels for the sentences.
+        :return: A dictionary of difficult cases for each model.
+        """
+        difficult_cases = {model.base_model_prefix: [] for model in self.models}
+
+        for idx, sentence in enumerate(sentences):
+            for model in self.models:
+                # Tokenize the sentence
+                inputs = self.tokenizer(sentence, return_tensors='pt', padding=True, truncation=True)
+                logits = model(**inputs).logits
+                predictions = torch.argmax(logits, dim=-1)
+
+                # Map predicted indices to labels
+                predicted_labels = [model.config.id2label[token.item()] for token in predictions[0]]
+
+                # Compare predictions with true labels
+                if predicted_labels != true_labels[idx]:
+                    difficult_cases[model.base_model_prefix].append({
+                        'sentence': sentence,
+                        'predicted_labels': predicted_labels,
+                        'true_labels': true_labels[idx]
+                    })
+
+        return difficult_cases
+
+    def generate_report(self, sentences, true_labels):
+        """
+        Generate a detailed report summarizing model performance and decision-making.
+        :param sentences: List of sentences to analyze.
+        :param true_labels: Corresponding ground truth labels for the sentences.
+        :return: A dictionary summarizing the interpretability report.
+        """
+        # Analyze difficult cases
+        difficult_cases = self.analyze_difficult_cases(sentences, true_labels)
+
+        # Summarize results
+        report = {
+            'model_performance': [],
+            'difficult_cases': {},
+        }
+
+        for model in self.models:
+            model_name = model.base_model_prefix
+            num_difficult_cases = len(difficult_cases[model_name])
+            total_cases = len(sentences)
+            report['model_performance'].append({
+                'model_name': model_name,
+                'accuracy': f"{(1 - num_difficult_cases / total_cases) * 100:.2f}%",
+                'total_cases': total_cases,
+                'difficult_cases': num_difficult_cases,
+            })
+            report['difficult_cases'][model_name] = difficult_cases[model_name]
+
+        # Example SHAP and LIME placeholders
+        report['shap_analysis'] = "SHAP results for selected sentences..."
+        report['lime_analysis'] = "LIME results for selected sentences..."
+
+        # Display the report
+        print("=== Interpretability Report ===")
+        for model_perf in report['model_performance']:
+            print(f"Model: {model_perf['model_name']}")
+            print(f"Accuracy: {model_perf['accuracy']}")
+            print(f"Difficult Cases: {model_perf['difficult_cases']}/{model_perf['total_cases']}\n")
+
+        if any(report['difficult_cases'].values()):
+            print("=== Difficult Cases ===")
+            for model_name, cases in report['difficult_cases'].items():
+                if cases:
+                    print(f"Model: {model_name}")
+                    for case in cases:
+                        print(f"Sentence: {' '.join(case['sentence'])}")
+                        print(f"Predicted Labels: {case['predicted_labels']}")
+                        print(f"True Labels: {case['true_labels']}")
+                        print()
+        else:
+            print("No difficult cases identified.")
+
+        return report

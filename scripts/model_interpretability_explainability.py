@@ -49,3 +49,29 @@ class NERModelInterpretability:
                 sentence, label = [], []
 
         return {'sentences': sentences, 'labels': labels}
+
+    def interpret_with_shap(self, sentence_idx=0):
+        """
+        Use SHAP to interpret the model's predictions for a given sentence.
+        :param sentence_idx: Index of the sentence to interpret (default: 0).
+        """
+        # Choose a sentence from the dataset
+        sentence = self.dataset['sentences'][sentence_idx]
+        true_labels = self.dataset['labels'][sentence_idx]
+
+        # Tokenize the sentence
+        inputs = self.tokenizer(sentence, return_tensors='pt', padding=True, truncation=True)
+
+        # Define a SHAP explainer for the model
+        explainer = shap.Explainer(self.model, self.tokenizer)
+
+        # Generate SHAP values for the sentence
+        shap_values = explainer(inputs['input_ids'])
+
+        # Visualize SHAP values (displaying how much each token contributed to the classification)
+        shap.initjs()
+        shap.force_plot(shap_values[0].values, feature_names=sentence, matplotlib=True)
+
+        # Print the SHAP values and the true labels for analysis
+        print(f"True labels: {true_labels}")
+        print(f"SHAP values for the sentence: {shap_values}")

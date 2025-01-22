@@ -77,3 +77,14 @@ class NERModelInterpretability:
 
         # Display explanation
         explanation.show_in_notebook(text=True)
+
+    def analyze_single_sentence(self, sentence):
+        """
+        Analyze a single sentence with SHAP and LIME for interpretability.
+        :param sentence: The input sentence to analyze.
+        """
+        print("=== SHAP Analysis ===")
+        self.interpret_with_shap(sentence)
+
+        print("\n=== LIME Analysis ===")
+        self.interpret_with_lime(sentence)

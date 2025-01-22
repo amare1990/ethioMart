@@ -1,3 +1,4 @@
+"""Rule-based labeling. """
 import re
 
 
@@ -12,6 +13,7 @@ class CoNLLLabeler:
 
 
     def label_message_utf8_with_birr(self, message):
+      # Convert message to string if it's not already
         message = str(message)  # This line is added to handle float values
         # Split the message into lines
         lines = message.split('\n')
@@ -30,7 +32,19 @@ class CoNLLLabeler:
             tokens = re.findall(r'\S+', line)  # Tokenize the line
 
             # Process product entities
-            if len(tokens) >= 5:  # Example threshold for B-PRODUCT
+            # List of invitation calls or phrases to exclude from being labeled as products
+            exclusion_phrases = [
+                "ረፍት ቀንዎ",
+                "ደንበኞቻችን",
+                "ሱቅ ላይ መስተናገድ",
+                "በረፍት ቀንዎ",
+                "ምትፈልጉ ውድ"
+                # Add any other exclusion phrases here
+            ]
+            if any(phrase in line for phrase in exclusion_phrases):
+                # Skip product labeling if the phrase matches the exclusion list
+                continue
+            elif len(tokens) >= 5:  # Example threshold for B-PRODUCT
                 product_name = tokens[:5]  # First 5 tokens are part of B-PRODUCT
                 labeled_tokens.append(f"{product_name[0]} B-PRODUCT")
                 for token in product_name[1:]:
@@ -109,22 +123,21 @@ class CoNLLLabeler:
 
 
 
-
-    def label_dataset(self, max_messages=30):
+    def label_dataset(self):
         """
         Process the dataset and label each message.
         """
-        for i, message in enumerate(self.data["message"]):
-            if i >= max_messages:
-                break  # Stop after labeling the specified number of messages
+        for message in self.data["message"]:
+            # if i >= max_messages:
+            #     break  # Stop after labeling the specified number of messages
 
             # Label the message
             labeled_message = self.label_message_utf8_with_birr(message)
 
             # Append original message and labeled message to the dataset
-            self.labeled_data.append("Original Message:")
-            self.labeled_data.append(message)
-            self.labeled_data.append("\nLabeled Message:")
+            # self.labeled_data.append("Original Message:")
+            # self.labeled_data.append(message)
+            # self.labeled_data.append("\nLabeled Message:")
             self.labeled_data.append(labeled_message)
             self.labeled_data.append("")  # Separate entries with a blank line
 

@@ -110,3 +110,31 @@ class NERModelInterpretability:
 
         # Print the true labels for analysis
         print(f"True labels: {true_labels}")
+
+    def analyze_difficult_cases(self):
+        """
+        Analyze difficult cases where the model struggles to identify entities correctly.
+        :return: List of difficult cases with predictions and true labels.
+        """
+        difficult_cases = []
+
+        for idx, sentence in enumerate(self.dataset['sentences']):
+            # Tokenize the sentence
+            inputs = self.tokenizer(sentence, return_tensors='pt', padding=True, truncation=True)
+            logits = self.model(**inputs).logits
+            predictions = torch.argmax(logits, dim=-1)
+
+            # Get predicted labels
+            predicted_labels = [self.model.config.id2label[p.item()] for p in predictions[0]]
+
+            # Compare with true labels
+            true_labels = self.dataset['labels'][idx]
+
+            if predicted_labels != true_labels:
+                difficult_cases.append({
+                    'sentence': sentence,
+                    'predicted_labels': predicted_labels,
+                    'true_labels': true_labels
+                })
+
+        return difficult_cases

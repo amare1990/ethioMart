@@ -5,16 +5,16 @@
 ## Built With
 
 - Major languages used: Python3
-- Libraries: numpy, pandas, matplotlib.pyplot, scikit-learn, Torch, Transformers
+- Libraries: numpy, pandas, matplotlib.pyplot, scikit-learn, torch, transformers
 - Tools and Technlogies used: jupyter notebook, Google Colab, Git, GitHub, Gitflow, VS code editor.
 
 ## Demonstration and Website
 
-[Deployment link](Soon!)
+[Deployment link]()
 
 ## Getting Started
 
-You can clone my project and use it freely and then contribute to this project.
+You can clone my project and use it freely, then contribute to this project.
 
 - Get the local copy, by running `git clone https://github.com/amare1990/ethioMart.git` command in the directory of your local machine.
 - Go to the repo main directory, run `cd ethiomart` command
@@ -24,7 +24,7 @@ You can clone my project and use it freely and then contribute to this project.
 - `myenv\Scripts\activate` on windows os command prompt if you use windows os.
 
 - After that you have to install all the necessary Python libraries and tools by running `pip install -r requirements.txt`
-- To run this project, run `jupyter notebook` command from the main directory of the repo
+- To run this project, open `jupyter notebook` command from the main directory of the repo
 
 ### Prerequisites
 
@@ -54,6 +54,14 @@ You can clone my project and use it freely and then contribute to this project.
 - Run `autopep8 --in-place --aggressive --aggressive scripts/script_name.py` to automatically fix some linters errors
 - Run `pylint scripts/labeling_CoNLL.py` to check if the code follows the standard format
 - Run `autopep8 --in-place --aggressive --aggressive scripts/scripts/labeling_CoNLL.py` to automatically fix some linters errors
+- Run `pylint scripts/fine_tuning_NER.py` to check if the code follows the standard format
+- Run `autopep8 --in-place --aggressive --aggressive scripts/scripts/fine_tuning_NER.py` to automatically fix some linters errors
+- Run `pylint scripts/fine_tuning_ner_pipeliner.py` to check if the code follows the standard format
+- Run `autopep8 --in-place --aggressive --aggressive scripts/scripts/fine_tuning_ner_pipeliner.py` to automatically fix some linters errors
+- Run `pylint scripts/model_comparison_selection.py` to check if the code follows the standard format
+- Run `autopep8 --in-place --aggressive --aggressive scripts/scripts/model_comparison_selection.py` to automatically fix some linters errors
+- Run `pylint scripts/model_interpretability_explainability.py` to check if the code follows the standard format
+- Run `autopep8 --in-place --aggressive --aggressive scripts/scripts/model_interpretability_explainability.py` to automatically fix some linters errors
 
 ### Data Preprocessing
 
@@ -64,19 +72,24 @@ In this portion of the task, the following analysis has been conducted.
 - Data Summary:
     Summarize statistical descriptive statistics for both numerical features and object type features too.
 
-
 - Preprocessing data, removing emojis, spaces, and so on
-  Run /open the jupyter notebook named `data_preprocessor.ipynb` to to view the dat
+  Run /open the jupyter notebook named `data_preprocessor.ipynb` to view the dat
 
 ### Labeling the Message
 - The main functionality is implemented in `labeling_CoNLL.py` module.`labeler_CoNLL.ipynb` is the notebook you will open to save and view the labeled data.
 
-### Future Works
-- Refining labeling of product ames, prices and locations
-- Refining labeling using pretrained NLP algorithms
-- Training the model
-- Interpret models developed
+### Fine-tuning tokenization and Labeling
+- It is implemented in `fine_tuning_NER.py` module. The module autotokenize and label and is implemented using classes and modules from transformers using hugging face api. To pipeline the many processes in this module, `fine_tuning_ner_pipeliner.py` is add. You will open the `fine_tunining_ner_pipeliner.ipynb` jupyter notebook to run and view results.
 
+### Model Comparison and Selection.
+This module compares the three NER pretrained models: `'xlm-roberta-base', 'distilbert-base-multilingual-cased', 'bert-base-multilingual-cased'`. It uses data from the tokenized data in the fine-tuning module. It is implemented in `model_comparison_selection.py` module. The module compares the fine-tuned models by accuracy, training speed and testing/evaluating speed. You can run the notebook, `model_comparator_selector.ipynb` notebook to compare and run the fine-tuned models with regard to correctly labeling tokens.
+
+### Model Interpretability and Explainability
+This module is created to interpret the fine-tuned models usinh shap and lime model interpretability modules. It is implemented in `model_interpretability_explainability.py` module. This module also analyses difficult cases and provides reports for each fine-tuned models. It uses and loads models that are already saved during model comparison and selection process. It also uses the tokenized data from the model compariosn process. You can run the `model_interpretor_explainer.ipynb` notebook to view the analysis of model interpretability and reports.
+
+### Future Works
+- Refining labeling of product names, prices and locations
+- Refining labeling using pretrained NER algorithms
 
 
 > #### You can gain more insights by running the jupter notebook and view plots.

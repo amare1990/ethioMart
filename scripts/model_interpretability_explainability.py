@@ -21,3 +21,31 @@ class NERModelInterpretability:
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModelForTokenClassification.from_pretrained(model_name)
         self.dataset = self.load_and_prepare_data()
+
+
+    def load_and_prepare_data(self):
+        """
+        Load the dataset and prepare for model evaluation.
+        :return: Loaded dataset for analysis.
+        """
+        # Load the dataset from CoNLL format
+        with open(self.dataset_path, 'r', encoding='utf-8') as file:
+            lines = file.readlines()
+
+        # Process the CoNLL formatted data into sentences and labels
+        sentences = []
+        labels = []
+        sentence = []
+        label = []
+
+        for line in lines:
+            if line.strip():
+                token, label_token = line.strip().split()
+                sentence.append(token)
+                label.append(label_token)
+            else:
+                sentences.append(sentence)
+                labels.append(label)
+                sentence, label = [], []
+
+        return {'sentences': sentences, 'labels': labels}

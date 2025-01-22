@@ -18,6 +18,7 @@ class NERModelComparison:
         self.dataset_path = dataset_path
         self.models = models or ['xlm-roberta-base', 'distilbert-base-multilingual-cased', 'bert-base-multilingual-cased']
         self.tokenizer = None
+        self.tokenized_data = {'train': None, 'val': None}
         self.train_dataset = None
         self.val_dataset = None
         self.model_performance = {}
@@ -104,6 +105,18 @@ class NERModelComparison:
         self.train_dataset = self.train_dataset.map(tokenize_and_align_labels, batched=True)
         self.val_dataset = self.val_dataset.map(tokenize_and_align_labels, batched=True)
 
+        # After tokenizing
+        self.tokenized_data['train'] = self.train_dataset
+        self.tokenized_data['val'] = self.val_dataset
+
+
+    def get_tokenized_data(self):
+        """
+        Return the tokenized data for interpretability.
+        """
+        return self.tokenized_data
+
+
     def load_model(self, model_name):
         """
         Load the pre-trained model for token classification.
@@ -154,7 +167,7 @@ class NERModelComparison:
         :param model: Fine-tuned NER model.
         :return: Evaluation metrics (accuracy, f1-score, etc.).
         """
-        print("\n*********************************************************\n")
+        print("\n\n*********************************************************\n\n")
         print(f'Starting evaluating with model: {model}')
         trainer = Trainer(model=model)
         start_time = time.time()

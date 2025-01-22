@@ -138,3 +138,31 @@ class NERModelInterpretability:
                 })
 
         return difficult_cases
+
+    def generate_report(self):
+        """
+        Generate a report with insights on the model's decision-making process.
+        :return: A dictionary of model interpretation insights.
+        """
+        difficult_cases = self.analyze_difficult_cases()
+
+        # Report the difficult cases
+        if difficult_cases:
+            print("Difficult cases where the model struggled:")
+            for case in difficult_cases:
+                print(f"Sentence: {' '.join(case['sentence'])}")
+                print(f"Predicted labels: {case['predicted_labels']}")
+                print(f"True labels: {case['true_labels']}")
+                print()
+        else:
+            print("No difficult cases identified.")
+
+        # Example analysis report
+        report = {
+            'model_performance': 'Overall model performance analysis here...',
+            'difficult_cases': difficult_cases,
+            'shap_analysis': 'SHAP analysis details here...',
+            'lime_analysis': 'LIME analysis details here...'
+        }
+
+        return report

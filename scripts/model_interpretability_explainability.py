@@ -14,9 +14,9 @@ class NERModelInterpretability:
         :param model_paths: List of paths to pre-trained models (default: three models in ../data/models_trained).
         """
         self.model_paths = model_paths or [
-            "../data/models_trained/model1",
-            "../data/models_trained/model2",
-            "../data/models_trained/model3",
+            "../data/models_trained/xlm-roberta-base",
+            "../data/models_trained/distilbert-base-multilingual-cased",
+            "../data/models_trained/bert-base-multilingual-cased",
         ]
         self.models = [self.load_model(path) for path in self.model_paths]
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_paths[0])

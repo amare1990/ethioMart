@@ -20,8 +20,8 @@ You can clone my project and use it freely, then contribute to this project.
 - Go to the repo main directory, run `cd ethiomart` command
 - Create python environment by running `python3 -m venv venm-name`, where `ven-name` is your python environment you create
 - Activate it by running:
-- `source venv-name/bin/activate` on linux os command prompt if you use linux os
-- `myenv\Scripts\activate` on windows os command prompt if you use windows os.
+   - `source venv-name/bin/activate` on linux os command prompt if you use linux os
+   - `myenv\Scripts\activate` on windows os command prompt if you use windows os.
 
 - After that you have to install all the necessary Python libraries and tools by running `pip install -r requirements.txt`
 - To run this project, open `jupyter notebook` command from the main directory of the repo
@@ -47,7 +47,7 @@ You can clone my project and use it freely, then contribute to this project.
 - Labeling `message` data into `product`, `Price` and `location` and then saving in `CoNLL` format
 
 
-#### GitHub Action
+#### GitHub Action and Following Python Coding Styles
 - Go to the main directory of this repo, create paths, `.github/workflows`. And then add `pylint` linters
 - Make it to check when Pull request is created
 - Run `pylint scripts/data_preprocessing.py` to check if the code follows the standard format
